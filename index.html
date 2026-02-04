@@ -232,9 +232,21 @@
 
     <!-- 1B. DATA PENDUKUNG UNTUK U1 -->
     <section class="mb-8">
-      <h2 class="font-bold mb-3 text-sm flex items-center gap-2">
-        <span class="bg-green-600 text-white px-2 py-0.5 rounded text-[10px]">📋</span>
-        DATA BATU TIMBANG YANG DIGUNAKAN
+      <h2 class="font-bold mb-3 text-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="bg-green-600 text-white px-2 py-0.5 rounded text-[10px]">📋</span>
+          DATA BATU TIMBANG YANG DIGUNAKAN
+        </div>
+        <div class="flex gap-2">
+          <button onclick="deleteSelectedRows()" title="Hapus Baris Terpilih"
+            class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px] flex items-center gap-1 transition-all no-print shadow-sm">
+            <span>🗑️ Hapus Terpilih</span>
+          </button>
+          <button onclick="addSupportRow()" title="Tambah Baris Baru"
+            class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-[10px] flex items-center gap-1 transition-all no-print shadow-sm">
+            <span>➕ Tambah Baris</span>
+          </button>
+        </div>
       </h2>
       <p class="text-xs text-gray-600 mb-2 italic">Data Master yang VALID untuk perhitungan U1. Hanya master data dengan
         No. Identitas di bawah ini yang akan digunakan.</p>
@@ -242,6 +254,9 @@
       <table class="w-full border border-black border-collapse table-fixed">
         <thead class="bg-gray-200">
           <tr>
+            <th class="border border-black px-2 py-2 w-[30px] text-center no-print">
+              <input type="checkbox" onchange="toggleAllSupportRows(this)" />
+            </th>
             <th class="border border-black px-2 py-2 w-[60px] text-xs">No.</th>
             <th class="border border-black px-2 py-2 text-xs">No. Identitas Batu Timbang</th>
             <th class="border border-black px-2 py-2 text-xs">No. Sertifikat</th>
@@ -250,92 +265,10 @@
             <th class="border border-black px-2 py-2 w-[100px] text-xs">Kalibrasi ulang</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td class="border border-black px-2 py-1 text-center font-bold">1</td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-id-1"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs support-data-input"
-                placeholder="QA/U/BTN/2013/001" oninput="handleSupportIdChange()" />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-cert-1"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs support-data-input"
-                placeholder="1631/AT/LK-AS/VII/24" oninput="handleSupportIdChange()" />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-class-1"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center support-data-input"
-                placeholder="F1" oninput="handleSupportIdChange()" />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-last-1"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center bg-gray-50 cursor-not-allowed"
-                placeholder="21 Jan 2024" readonly />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-next-1"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center bg-gray-50 cursor-not-allowed"
-                placeholder="21 Jan 2026" readonly />
-            </td>
-          </tr>
-          <tr>
-            <td class="border border-black px-2 py-1 text-center font-bold">2</td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-id-2"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs support-data-input"
-                placeholder="QA/U/BTN/2013/004" oninput="saveSupportData()" />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-cert-2"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs support-data-input"
-                placeholder="213/AT/LK-AS/I/24" oninput="saveSupportData()" />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-class-2"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center support-data-input"
-                placeholder="F1" oninput="handleSupportIdChange()" />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-last-2"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center bg-gray-50 cursor-not-allowed"
-                placeholder="03 Jan 2024" readonly />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-next-2"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center bg-gray-50 cursor-not-allowed"
-                placeholder="03 Jan 2026" readonly />
-            </td>
-          </tr>
-          <tr>
-            <td class="border border-black px-2 py-1 text-center font-bold">3</td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-id-3"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs support-data-input"
-                placeholder="QA/U/BTN/2015/003" oninput="saveSupportData()" />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-cert-3"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs support-data-input"
-                placeholder="214/AT/LK-AS/I/24" oninput="saveSupportData()" />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-class-3"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center support-data-input"
-                placeholder="F2" oninput="saveSupportData()" />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-last-3"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center bg-gray-50 cursor-not-allowed"
-                placeholder="03 Jan 2024" readonly />
-            </td>
-            <td class="border border-black px-2 py-1">
-              <input type="text" id="support-next-3"
-                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center bg-gray-50 cursor-not-allowed"
-                placeholder="03 Jan 2026" readonly />
-            </td>
-          </tr>
+        <tbody id="support-table-body">
+          <!-- Gererated via JavaScript -->
         </tbody>
+      </table>
       </table>
 
       <script>
@@ -348,100 +281,161 @@
           return `${d.getDate().toString().padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
         }
 
-        // Triggered when No. Identitas changes
-        function handleSupportIdChange() {
+        function toggleAllSupportRows(source) {
+          const checkboxes = document.querySelectorAll('.support-row-checkbox');
+          checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+
+        function deleteSelectedRows() {
+          const tbody = document.getElementById('support-table-body');
+          const checkboxes = tbody.querySelectorAll('.support-row-checkbox:checked');
+
+          if (checkboxes.length === 0) {
+            alert("Pilih baris yang ingin dihapus terlebih dahulu.");
+            return;
+          }
+
+          if (!confirm(`Yakin ingin menghapus ${checkboxes.length} baris terpilih?`)) return;
+
+          checkboxes.forEach(cb => {
+            const row = cb.closest('tr');
+            row.remove();
+          });
+
+          reindexSupportRows();
+          saveSupportData();
+        }
+
+        function reindexSupportRows() {
+          const tbody = document.getElementById('support-table-body');
+          const rows = tbody.querySelectorAll('tr');
+
+          rows.forEach((row, idx) => {
+            const newIdx = idx + 1;
+            // Update No. Column
+            row.cells[1].innerText = newIdx;
+
+            // Update IDs and Event Listeners
+            const idInput = row.querySelector('[id^="support-id-"]');
+            const certInput = row.querySelector('[id^="support-cert-"]');
+            const classInput = row.querySelector('[id^="support-class-"]');
+            const lastInput = row.querySelector('[id^="support-last-"]');
+            const nextInput = row.querySelector('[id^="support-next-"]');
+
+            if (idInput) {
+              idInput.id = `support-id-${newIdx}`;
+              idInput.setAttribute('oninput', `handleSupportIdChange(${newIdx})`);
+            }
+            if (certInput) certInput.id = `support-cert-${newIdx}`;
+            if (classInput) classInput.id = `support-class-${newIdx}`;
+            if (lastInput) lastInput.id = `support-last-${newIdx}`;
+            if (nextInput) nextInput.id = `support-next-${newIdx}`;
+          });
+        }
+
+        function addSupportRow(data = {}) {
+          const tbody = document.getElementById('support-table-body');
+          const rowCount = tbody.rows.length;
+          const newIdx = rowCount + 1;
+
+          const tr = document.createElement('tr');
+          tr.className = "group hover:bg-green-50 transition-colors";
+          tr.innerHTML = `
+            <td class="border border-black px-2 py-1 text-center bg-white no-print">
+              <input type="checkbox" class="support-row-checkbox" />
+            </td>
+            <td class="border border-black px-2 py-1 text-center font-bold bg-gray-50">${newIdx}</td>
+            <td class="border border-black px-2 py-1">
+              <input type="text" id="support-id-${newIdx}" value="${data.noIdentitas || ''}"
+                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs support-data-input"
+                placeholder="No. Identitas" oninput="handleSupportIdChange(${newIdx})" />
+            </td>
+            <td class="border border-black px-2 py-1">
+              <input type="text" id="support-cert-${newIdx}" value="${data.noSertifikat || ''}"
+                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs support-data-input"
+                placeholder="No. Sertifikat" oninput="saveSupportData()" />
+            </td>
+            <td class="border border-black px-2 py-1">
+              <input type="text" id="support-class-${newIdx}" value="${data.kelas || ''}"
+                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center support-data-input"
+                placeholder="F1" oninput="saveSupportData()" />
+            </td>
+            <td class="border border-black px-2 py-1">
+              <input type="text" id="support-last-${newIdx}" value="${data.tglTerakhir || ''}"
+                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center bg-gray-50 cursor-not-allowed"
+                placeholder="-" readonly />
+            </td>
+            <td class="border border-black px-2 py-1">
+              <input type="text" id="support-next-${newIdx}" value="${data.tglUlang || ''}"
+                class="w-full border-0 focus:outline-none focus:ring-0 p-1 text-xs text-center bg-gray-50 cursor-not-allowed"
+                placeholder="-" readonly />
+            </td>
+          `;
+          tbody.appendChild(tr);
+          if (!data.noIdentitas) saveSupportData();
+        }
+
+        function handleSupportIdChange(idx) {
           const masterData = JSON.parse(localStorage.getItem('masterBatuTimbang') || '[]');
+          const idInput = document.getElementById(`support-id-${idx}`);
+          const idValue = idInput ? idInput.value.trim() : '';
+          const lastCell = document.getElementById(`support-last-${idx}`);
+          const nextCell = document.getElementById(`support-next-${idx}`);
 
-          for (let i = 1; i <= 3; i++) {
-            const idInput = document.getElementById(`support-id-${i}`);
-            const idValue = idInput.value ? idInput.value.trim() : '';
-            const lastCell = document.getElementById(`support-last-${i}`);
-            const nextCell = document.getElementById(`support-next-${i}`);
+          if (idValue) {
+            const matched = masterData.find(m => m.id === idValue);
+            if (matched && matched.tanggal) {
+              const lastDate = matched.tanggal;
+              const d = new Date(lastDate);
+              const nextDate = new Date(d);
+              nextDate.setFullYear(d.getFullYear() + 2);
 
-            if (idValue) {
-              const matched = masterData.find(m => m.id === idValue);
-              if (matched && matched.tanggal) {
-                const lastDate = matched.tanggal;
-                const d = new Date(lastDate);
-                // Add 2 years for Next Calibration
-                const nextDate = new Date(d);
-                nextDate.setFullYear(d.getFullYear() + 2);
-
-                lastCell.value = formatCalibrationDate(lastDate);
-                nextCell.value = formatCalibrationDate(nextDate.toISOString().split('T')[0]);
-              } else {
-                lastCell.value = '';
-                nextCell.value = '';
-              }
-            } else {
-              lastCell.value = '';
-              nextCell.value = '';
+              if (lastCell) lastCell.value = formatCalibrationDate(lastDate);
+              if (nextCell) nextCell.value = formatCalibrationDate(nextDate.toISOString().split('T')[0]);
             }
           }
           saveSupportData();
         }
 
-        // Load support data dari localStorage
         function loadSupportData() {
-          const supportData = JSON.parse(localStorage.getItem('masterDataSupport') || '[]');
-          const masterData = JSON.parse(localStorage.getItem('masterBatuTimbang') || '[]');
+          const tbody = document.getElementById('support-table-body');
+          if (!tbody) return;
+          tbody.innerHTML = '';
 
-          for (let i = 0; i < 3; i++) {
-            const data = supportData[i] || {};
-            const idInput = document.getElementById(`support-id-${i + 1}`);
-            const certInput = document.getElementById(`support-cert-${i + 1}`);
-            const classInput = document.getElementById(`support-class-${i + 1}`);
-            const lastCell = document.getElementById(`support-last-${i + 1}`);
-            const nextCell = document.getElementById(`support-next-${i + 1}`);
+          const savedData = JSON.parse(localStorage.getItem('masterDataSupport') || '[]');
 
-            if (idInput) idInput.value = data.noIdentitas || '';
-            if (certInput) certInput.value = data.noSertifikat || '';
-            if (classInput) classInput.value = data.kelas || '';
-
-            // Re-trigger calculation to ensure consistency with master data
-            const idValue = data.noIdentitas || '';
-            if (idValue) {
-              const matched = masterData.find(m => m.id === idValue);
-              if (matched && matched.tanggal) {
-                const lastDate = matched.tanggal;
-                const d = new Date(lastDate);
-                const nextDate = new Date(d);
-                nextDate.setFullYear(d.getFullYear() + 2);
-
-                if (lastCell) lastCell.value = formatCalibrationDate(lastDate);
-                if (nextCell) nextCell.value = formatCalibrationDate(nextDate.toISOString().split('T')[0]);
-              } else {
-                if (lastCell) lastCell.value = data.tglTerakhir || '';
-                if (nextCell) nextCell.value = data.tglUlang || '';
-              }
-            } else {
-              if (lastCell) lastCell.value = '';
-              if (nextCell) nextCell.value = '';
-            }
+          if (savedData.length === 0) {
+            // Default 3 rows if no data
+            for (let i = 0; i < 3; i++) addSupportRow();
+          } else {
+            savedData.forEach(data => addSupportRow(data));
           }
           if (typeof calculateUncertainty === 'function') calculateUncertainty();
         }
 
-        // Save support data ke localStorage
         function saveSupportData() {
-          const supportData = [];
-          for (let i = 1; i <= 3; i++) {
-            const noIdentitas = document.getElementById(`support-id-${i}`).value.trim();
-            const noSertifikat = document.getElementById(`support-cert-${i}`).value.trim();
-            const kelas = document.getElementById(`support-class-${i}`).value.trim();
-            const tglTerakhir = document.getElementById(`support-last-${i}`).value.trim();
-            const tglUlang = document.getElementById(`support-next-${i}`).value.trim();
+          const tbody = document.getElementById('support-table-body');
+          const rows = tbody.querySelectorAll('tr');
+          const dataToSave = [];
 
-            if (noIdentitas || noSertifikat || kelas || tglTerakhir || tglUlang) {
-              supportData.push({ noIdentitas, noSertifikat, kelas, tglTerakhir, tglUlang });
+          rows.forEach((row, idx) => {
+            const i = idx + 1;
+            const noIdentitas = document.getElementById(`support-id-${i}`)?.value.trim() || '';
+            const noSertifikat = document.getElementById(`support-cert-${i}`)?.value.trim() || '';
+            const kelas = document.getElementById(`support-class-${i}`)?.value.trim() || '';
+            const tglTerakhir = document.getElementById(`support-last-${i}`)?.value.trim() || '';
+            const tglUlang = document.getElementById(`support-next-${i}`)?.value.trim() || '';
+
+            if (noIdentitas || noSertifikat || kelas) {
+              dataToSave.push({ noIdentitas, noSertifikat, kelas, tglTerakhir, tglUlang });
             }
-          }
-          localStorage.setItem('masterDataSupport', JSON.stringify(supportData));
+          });
 
+          localStorage.setItem('masterDataSupport', JSON.stringify(dataToSave));
           if (typeof calculateUncertainty === 'function') calculateUncertainty();
         }
 
-        // Load on page load
+        // Initialize on load
         document.addEventListener('DOMContentLoaded', loadSupportData);
       </script>
     </section>
