@@ -1032,7 +1032,7 @@
 
           // Global focusout listener to format inputs when editing finishes
           document.addEventListener("focusout", function (e) {
-            const excludedIds = ['cert-no', 'no-identitas', 'env-suhu', 'env-rh', 'env-pa', 'form-no', 'rev-no', 'eff-date'];
+            const excludedIds = ['cert-no', 'no-identitas', 'env-suhu', 'env-rh', 'env-pa', 'form-no', 'rev-no', 'eff-date', 'input-cap', 'input-e'];
             if (
               e.target.tagName === 'INPUT' &&
               !e.target.hasAttribute('readonly') &&
