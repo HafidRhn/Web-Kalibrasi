@@ -4370,8 +4370,11 @@
     // Filter valid data
     const points = xVals.map((x, i) => ({ x: x, y: yVals[i] }));
 
+    // Determine max X for trendline (add some padding or just use max)
+    const maxX = xVals.length > 0 ? Math.max(...xVals) : 1400;
+
     // Sort for trendline
-    const lineX = [0, 1400];
+    const lineX = [0, maxX];
     const lineY = lineX.map(x => intercept + slope * x);
 
     const equationText = `y = ${formatIndonesianExcel(slope, 9)}x + ${formatIndonesianExcel(intercept, 9)}`;
@@ -4407,9 +4410,34 @@
       ]
     };
 
+    // Determine decimal places for ticks
+    // Use g_decimals if available (global var from other parts of the script), 
+    // or fallback to 3.
+    const tickDecimals = (typeof g_decimals !== 'undefined') ? g_decimals : 3;
+
+    const tickCallback = function (value) {
+      // Format number with Indonesian comma separator
+      // and dynamic decimals
+      return new Intl.NumberFormat('id-ID', {
+        minimumFractionDigits: tickDecimals,
+        maximumFractionDigits: tickDecimals
+      }).format(value);
+    };
+
     if (g_regressionChart) {
       g_regressionChart.data = chartData;
       g_regressionChart.options.plugins.customData = { equation: equationText, r2: r2Text };
+
+      // Update scales options dynamically
+      g_regressionChart.options.scales.x.ticks.callback = tickCallback;
+      g_regressionChart.options.scales.y.ticks.callback = tickCallback;
+
+      // Reset min/max to allow auto-scaling (remove fixed limits if they existed)
+      delete g_regressionChart.options.scales.x.min;
+      delete g_regressionChart.options.scales.x.max;
+      delete g_regressionChart.options.scales.y.min;
+      delete g_regressionChart.options.scales.y.max;
+
       g_regressionChart.update();
     } else {
       g_regressionChart = new Chart(ctx, {
@@ -4465,8 +4493,6 @@
           },
           scales: {
             x: {
-              min: 0,
-              max: 1400,
               title: {
                 display: true,
                 text: 'Bobot Aktual',
@@ -4474,16 +4500,11 @@
               },
               grid: { display: false },
               ticks: {
-                stepSize: 200,
-                callback: function (value) {
-                  if (value === 0) return ',000';
-                  return value.toFixed(3).replace('.', ',');
-                }
+                // Auto-step size
+                callback: tickCallback
               }
             },
             y: {
-              min: 0,
-              max: 1400,
               title: {
                 display: true,
                 text: 'Massa Konvensional',
@@ -4491,11 +4512,8 @@
               },
               grid: { color: '#bbb', lineWidth: 1 },
               ticks: {
-                stepSize: 200,
-                callback: function (value) {
-                  if (value === 0) return ',000';
-                  return value.toFixed(3).replace('.', ',');
-                }
+                // Auto-step size
+                callback: tickCallback
               }
             }
           }
