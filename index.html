@@ -2446,7 +2446,11 @@
               else row1Readonlies[1].value = "-";
 
               if (!isNaN(c)) {
+                // Hybrid Precision: 5 decimals for PDF (stored in dataset), 4 decimals for UI Display
+                row1Readonlies[2].dataset.fullValue = formatNumber(c, 5);
                 row1Readonlies[2].value = formatNumber(c, 4);
+
+                row1Readonlies[3].dataset.fullValue = formatNumber(Math.abs(c), 5);
                 row1Readonlies[3].value = formatNumber(Math.abs(c), 4);
               } else {
                 row1Readonlies[2].value = "-";
@@ -3943,7 +3947,8 @@
       const lRows = Array.from(lt.querySelectorAll("tbody tr")).filter(tr => tr.cells.length > 0 && tr.cells[0].hasAttribute("rowspan") && tr.cells[0].innerText.trim() !== "No");
       lRows.forEach((r, idx) => {
         const nom = r.cells[1].innerText;
-        const corr = r.cells[9].querySelector("input")?.value || "0";
+        const corrInput = r.cells[9].querySelector("input");
+        const corr = corrInput?.dataset.fullValue || corrInput?.value || "0";
 
         // U95 from uncertainty table
         let u95 = "";
