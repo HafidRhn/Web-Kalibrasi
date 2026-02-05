@@ -3832,8 +3832,8 @@
     doc.text("III. Pengujian Pre-Adjustment", 14, finalY);
 
     const preNom = document.getElementById("pre-adj-nominal")?.innerText || "-";
-    const preRi = document.querySelector(".pre-adj-correction")?.value || "-";
-    const postRi = document.querySelector(".post-adj-correction")?.value || "-";
+    const preRi = document.querySelector(".pre-adj-abs-correction")?.value || "-";
+    const postRi = document.querySelector(".post-adj-abs-correction")?.value || "-";
     const preTol = "0,10";
 
     const kesimpulanPre = Math.abs(parseNumber(postRi)) <= parseNumber(preTol) ? "MS" : "TMS";
