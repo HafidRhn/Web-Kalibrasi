@@ -3956,7 +3956,8 @@
         if (ut) {
           const utRows = ut.querySelectorAll("tbody tr");
           if (utRows[idx] && utRows[idx].cells.length > 12) {
-            u95 = utRows[idx].cells[12].innerText;
+            const rawU95 = utRows[idx].cells[12].innerText;
+            u95 = formatNumber(parseNumber(rawU95), 5);
           }
         }
 
