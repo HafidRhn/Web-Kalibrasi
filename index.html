@@ -75,7 +75,7 @@
                 class="w-12 border-b border-dashed border-gray-300 focus:border-blue-500 focus:outline-none text-center bg-transparent"
                 placeholder="0" oninput="saveSpecs()" />
               <span class="unit-label">g</span>
-              <span id="specs-cell" class="hidden" data-cap="3100" data-d="0.01" data-e="1">3100 g / 0,01g / 1 g</span>
+              <span id="specs-cell" class="hidden"></span>
             </div>
             <select id="unit-selector" onchange="handleUnitChange(this.value)"
               class="ml-4 border border-gray-300 rounded px-2 py-1 bg-white text-xs no-print focus:outline-none focus:ring-1 focus:ring-blue-500">
@@ -477,8 +477,16 @@
             <td class="border border-black font-bold p-2" rowspan="4">Pre-Adjustment</td>
             <td class="border border-black relative group p-2" rowspan="4">
               <span id="pre-adj-nominal" data-base-weight="2000" class="no-decimal">2000</span>
-              <button onclick="openMasterLookup('pre-adj')"
-                class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+              <div class="absolute top-1 right-1 flex gap-1 no-print">
+                <button onclick="openMasterLookup('pre-adj')" title="Cari dari Master"
+                  class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                </button>
+              </div>
             </td>
             <td id="pre-adj-mc" class="border border-black p-2 mc-cell" rowspan="4" data-base-weight="2000.0023">
               2000,002300
@@ -529,8 +537,16 @@
             <td class="border border-black font-bold p-2" rowspan="4">Post-Adjustment</td>
             <td class="border border-black relative group p-2" rowspan="4">
               <span id="post-adj-nominal" data-base-weight="2000" class="no-decimal">2000</span>
-              <button onclick="openMasterLookup('post-adj')"
-                class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+              <div class="absolute top-1 right-1 flex gap-1 no-print">
+                <button onclick="openMasterLookup('post-adj')" title="Cari dari Master"
+                  class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                </button>
+              </div>
             </td>
             <td id="post-adj-mc" class="border border-black p-2 mc-cell" rowspan="4" data-base-weight="2000.0023">
               2000,002300</td>
@@ -781,6 +797,67 @@
           return g_decimals;
         }
 
+        function getAccuracyClass() {
+          const savedClass = localStorage.getItem('calibrationClass');
+          if (savedClass) return savedClass;
+          // Fallback to calibrationSettings if available
+          const settings = JSON.parse(localStorage.getItem('calibrationSettings') || '{}');
+          if (settings.accuracyClass) return settings.accuracyClass;
+          return "II"; // Default
+        }
+
+        function getVerificationScaleInterval() {
+          const savedE = localStorage.getItem('calibrationE');
+          if (savedE && !isNaN(parseFloat(savedE))) return parseFloat(savedE);
+
+          // Fallback to specs-cell
+          const specsCell = document.getElementById("specs-cell");
+          if (specsCell && specsCell.dataset.e) return parseFloat(specsCell.dataset.e);
+
+          const innerText = specsCell ? specsCell.innerText : "";
+          if (innerText.includes("/")) {
+            const eVal_str = innerText.split("/").pop().replace("g", "").trim().replace(",", ".");
+            const val = parseFloat(eVal_str);
+            if (!isNaN(val)) return val;
+          }
+
+          // Last fallback: use d * 10 or 1
+          const d = getResolutionFromSpecs();
+          return d * 10 || 1;
+        }
+
+        function getMPEFactor(m, accClass) {
+          // Based on Table 4 (MPE Initial Verification) - OIML R76-1
+          const cleanClass = String(accClass || "II").toUpperCase();
+          const absM = Math.abs(m);
+
+          // Class I check (Requires strict Match to avoid overlap with II, III, IIII)
+          if (cleanClass === "I" || (cleanClass.includes("(I)") && !cleanClass.includes("II"))) {
+            if (absM >= 0 && absM <= 50000) return 0.5;
+            if (absM > 50000 && absM <= 200000) return 1.0;
+            if (absM > 200000) return 1.5;
+          }
+          // Class II check
+          else if (cleanClass === "II" || cleanClass.includes("(II)")) {
+            if (absM >= 0 && absM <= 5000) return 0.5;
+            if (absM > 5000 && absM <= 20000) return 1.0;
+            if (absM > 20000 && absM <= 100000) return 1.5;
+          }
+          // Class III check
+          else if (cleanClass === "III" || cleanClass.includes("(III)")) {
+            if (absM >= 0 && absM <= 500) return 0.5;
+            if (absM > 500 && absM <= 2000) return 1.0;
+            if (absM > 2000 && absM <= 10000) return 1.5;
+          }
+          // Class IIII check
+          else if (cleanClass === "IIII" || cleanClass === "IV" || cleanClass.includes("(IIII)") || cleanClass.includes("(IV)")) {
+            if (absM >= 0 && absM <= 50) return 0.5;
+            if (absM > 50 && absM <= 200) return 1.0;
+            if (absM > 200 && absM <= 1000) return 1.5;
+          }
+          return 1.0; // Fail-safe fallback factor
+        }
+
         function getCapacityFromSpecs() {
           const specsCell = document.getElementById("specs-cell");
           if (specsCell && specsCell.dataset.cap) {
@@ -828,8 +905,10 @@
           // Always convert from gram (base) to current unit
           const convertedNum = convertToUnit(num);
 
-          // Jika decimals tidak ditentukan, gunakan global setting
-          const d = (decimals === null) ? g_decimals : decimals;
+          // Robustly determine decimals
+          let d = (decimals === null) ? g_decimals : decimals;
+          if (isNaN(d) || d < 0) d = 0;
+          if (d > 20) d = 20; // toFixed limitation
 
           if (convertedNum === 0) {
             if (d === 0) return "0";
@@ -1709,10 +1788,24 @@
                 </td>
                 <td class="border border-black text-center relative group" rowspan="4">
                   <span class="no-decimal" data-base-weight="5">5</span>
-                  <button onclick="openManualInputModalWithRow(event)"
-                    class="absolute top-1 right-7 opacity-0 group-hover:opacity-100 transition-opacity bg-green-100 p-0.5 rounded text-green-600 no-print">➕</button>
-                  <button onclick="openMasterLookup('linearity', 'linearity-row-1')"
-                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+                  <div class="absolute top-1 right-1 flex gap-1 no-print">
+                    <button onclick="openManualInputModalWithRow(event)" title="Hitung Gabungan"
+                      class="w-6 h-6 flex items-center justify-center bg-green-50 text-green-600 rounded shadow-sm border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
+                    <button onclick="openMasterLookup('linearity', 'linearity-row-1')" title="Cari dari Master"
+                      class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="border border-black text-center mc-cell" rowspan="4" data-base-weight="5.000050">
                   5,000050
@@ -1770,10 +1863,24 @@
                 </td>
                 <td class="border border-black text-center relative group" rowspan="4">
                   <span class="no-decimal" data-base-weight="10">10</span>
-                  <button onclick="openManualInputModalWithRow(event)"
-                    class="absolute top-1 right-7 opacity-0 group-hover:opacity-100 transition-opacity bg-green-100 p-0.5 rounded text-green-600 no-print">➕</button>
-                  <button onclick="openMasterLookup('linearity', 'linearity-row-2')"
-                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+                  <div class="absolute top-1 right-1 flex gap-1 no-print">
+                    <button onclick="openManualInputModalWithRow(event)" title="Hitung Gabungan"
+                      class="w-6 h-6 flex items-center justify-center bg-green-50 text-green-600 rounded shadow-sm border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
+                    <button onclick="openMasterLookup('linearity', 'linearity-row-2')" title="Cari dari Master"
+                      class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="border border-black text-center mc-cell" rowspan="4" data-base-weight="10.000110">
                   10,000110
@@ -1831,10 +1938,24 @@
                 </td>
                 <td class="border border-black text-center relative group" rowspan="4">
                   <span class="no-decimal" data-base-weight="50">50</span>
-                  <button onclick="openManualInputModalWithRow(event)"
-                    class="absolute top-1 right-7 opacity-0 group-hover:opacity-100 transition-opacity bg-green-100 p-0.5 rounded text-green-600 no-print">➕</button>
-                  <button onclick="openMasterLookup('linearity', 'linearity-row-3')"
-                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+                  <div class="absolute top-1 right-1 flex gap-1 no-print">
+                    <button onclick="openManualInputModalWithRow(event)" title="Hitung Gabungan"
+                      class="w-6 h-6 flex items-center justify-center bg-green-50 text-green-600 rounded shadow-sm border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
+                    <button onclick="openMasterLookup('linearity', 'linearity-row-3')" title="Cari dari Master"
+                      class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="border border-black text-center mc-cell" rowspan="4" data-base-weight="50.000070">
                   50,000070
@@ -1892,10 +2013,24 @@
                 </td>
                 <td class="border border-black text-center relative group" rowspan="4">
                   <span class="no-decimal" data-base-weight="100">100</span>
-                  <button onclick="openManualInputModalWithRow(event)"
-                    class="absolute top-1 right-7 opacity-0 group-hover:opacity-100 transition-opacity bg-green-100 p-0.5 rounded text-green-600 no-print">➕</button>
-                  <button onclick="openMasterLookup('linearity', 'linearity-row-4')"
-                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+                  <div class="absolute top-1 right-1 flex gap-1 no-print">
+                    <button onclick="openManualInputModalWithRow(event)" title="Hitung Gabungan"
+                      class="w-6 h-6 flex items-center justify-center bg-green-50 text-green-600 rounded shadow-sm border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
+                    <button onclick="openMasterLookup('linearity', 'linearity-row-4')" title="Cari dari Master"
+                      class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="border border-black text-center mc-cell" rowspan="4" data-base-weight="99.999940">
                   99,999940
@@ -1953,10 +2088,24 @@
                 </td>
                 <td class="border border-black text-center relative group" rowspan="4">
                   <span class="no-decimal" data-base-weight="200">200</span>
-                  <button onclick="openManualInputModalWithRow(event)"
-                    class="absolute top-1 right-7 opacity-0 group-hover:opacity-100 transition-opacity bg-green-100 p-0.5 rounded text-green-600 no-print">➕</button>
-                  <button onclick="openMasterLookup('linearity', 'linearity-row-5')"
-                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+                  <div class="absolute top-1 right-1 flex gap-1 no-print">
+                    <button onclick="openManualInputModalWithRow(event)" title="Hitung Gabungan"
+                      class="w-6 h-6 flex items-center justify-center bg-green-50 text-green-600 rounded shadow-sm border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
+                    <button onclick="openMasterLookup('linearity', 'linearity-row-5')" title="Cari dari Master"
+                      class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="border border-black text-center mc-cell" rowspan="4" data-base-weight="199.999890">
                   199,999890
@@ -2014,10 +2163,24 @@
                 </td>
                 <td class="border border-black text-center relative group" rowspan="4">
                   <span class="no-decimal" data-base-weight="500">500</span>
-                  <button onclick="openManualInputModalWithRow(event)"
-                    class="absolute top-1 right-7 opacity-0 group-hover:opacity-100 transition-opacity bg-green-100 p-0.5 rounded text-green-600 no-print">➕</button>
-                  <button onclick="openMasterLookup('linearity', 'linearity-row-6')"
-                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+                  <div class="absolute top-1 right-1 flex gap-1 no-print">
+                    <button onclick="openManualInputModalWithRow(event)" title="Hitung Gabungan"
+                      class="w-6 h-6 flex items-center justify-center bg-green-50 text-green-600 rounded shadow-sm border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
+                    <button onclick="openMasterLookup('linearity', 'linearity-row-6')" title="Cari dari Master"
+                      class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="border border-black text-center mc-cell" rowspan="4" data-base-weight="500.000700">
                   500,000700
@@ -2075,10 +2238,24 @@
                 </td>
                 <td class="border border-black text-center relative group" rowspan="4">
                   <span class="no-decimal" data-base-weight="1000">1000</span>
-                  <button onclick="openManualInputModalWithRow(event)"
-                    class="absolute top-1 right-7 opacity-0 group-hover:opacity-100 transition-opacity bg-green-100 p-0.5 rounded text-green-600 no-print">➕</button>
-                  <button onclick="openMasterLookup('linearity', 'linearity-row-7')"
-                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+                  <div class="absolute top-1 right-1 flex gap-1 no-print">
+                    <button onclick="openManualInputModalWithRow(event)" title="Hitung Gabungan"
+                      class="w-6 h-6 flex items-center justify-center bg-green-50 text-green-600 rounded shadow-sm border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
+                    <button onclick="openMasterLookup('linearity', 'linearity-row-7')" title="Cari dari Master"
+                      class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="border border-black text-center mc-cell" rowspan="4" data-base-weight="999.998000">
                   999,998000
@@ -2136,10 +2313,24 @@
                 </td>
                 <td class="border border-black text-center relative group" rowspan="4">
                   <span class="no-decimal" data-base-weight="1500">1500</span>
-                  <button onclick="openManualInputModalWithRow(event)"
-                    class="absolute top-1 right-7 opacity-0 group-hover:opacity-100 transition-opacity bg-green-100 p-0.5 rounded text-green-600 no-print">➕</button>
-                  <button onclick="openMasterLookup('linearity', 'linearity-row-8')"
-                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+                  <div class="absolute top-1 right-1 flex gap-1 no-print">
+                    <button onclick="openManualInputModalWithRow(event)" title="Hitung Gabungan"
+                      class="w-6 h-6 flex items-center justify-center bg-green-50 text-green-600 rounded shadow-sm border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
+                    <button onclick="openMasterLookup('linearity', 'linearity-row-8')" title="Cari dari Master"
+                      class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="border border-black text-center mc-cell" rowspan="4" data-base-weight="1499.998700">
                   1499,998700
@@ -2195,10 +2386,24 @@
                 </td>
                 <td class="border border-black text-center relative group" rowspan="4">
                   <span class="no-decimal" data-base-weight="2000">2000</span>
-                  <button onclick="openManualInputModalWithRow(event)"
-                    class="absolute top-1 right-7 opacity-0 group-hover:opacity-100 transition-opacity bg-green-100 p-0.5 rounded text-green-600 no-print">➕</button>
-                  <button onclick="openMasterLookup('linearity', 'linearity-row-9')"
-                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+                  <div class="absolute top-1 right-1 flex gap-1 no-print">
+                    <button onclick="openManualInputModalWithRow(event)" title="Hitung Gabungan"
+                      class="w-6 h-6 flex items-center justify-center bg-green-50 text-green-600 rounded shadow-sm border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
+                    <button onclick="openMasterLookup('linearity', 'linearity-row-9')" title="Cari dari Master"
+                      class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="border border-black text-center mc-cell" rowspan="4" data-base-weight="2000.002300">
                   2000,002300000
@@ -2254,10 +2459,24 @@
                 </td>
                 <td class="border border-black text-center relative group" rowspan="4">
                   <span class="no-decimal" data-base-weight="3000">3000</span>
-                  <button onclick="openManualInputModalWithRow(event)"
-                    class="absolute top-1 right-7 opacity-0 group-hover:opacity-100 transition-opacity bg-green-100 p-0.5 rounded text-green-600 no-print">➕</button>
-                  <button onclick="openMasterLookup('linearity', 'linearity-row-10')"
-                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 p-0.5 rounded text-indigo-600 no-print">🔍</button>
+                  <div class="absolute top-1 right-1 flex gap-1 no-print">
+                    <button onclick="openManualInputModalWithRow(event)" title="Hitung Gabungan"
+                      class="w-6 h-6 flex items-center justify-center bg-green-50 text-green-600 rounded shadow-sm border border-green-200 hover:bg-green-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="M12 5v14" />
+                      </svg>
+                    </button>
+                    <button onclick="openMasterLookup('linearity', 'linearity-row-10')" title="Cari dari Master"
+                      class="w-6 h-6 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded shadow-sm border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all duration-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
                 <td class="border border-black text-center mc-cell" rowspan="4" data-base-weight="3000.000300">
                   3000,000300000
@@ -3428,8 +3647,10 @@
       let nominalVal = 0;
       let nominalDisplay = "";
       if (linRows[idx]) {
-        nominalVal = parseFloat(linRows[idx].cells[1].dataset.baseWeight) || 0;
-        nominalDisplay = linRows[idx].cells[1].innerText.trim();
+        const nomCell = linRows[idx].cells[1];
+        const nomSpan = nomCell.querySelector('span.no-decimal');
+        nominalVal = parseFloat(nomSpan ? nomSpan.dataset.baseWeight : nomCell.dataset.baseWeight) || 0;
+        nominalDisplay = (nomSpan ? nomSpan.innerText : nomCell.innerText).trim();
       }
 
       // If no nominal, we can't even show the row basics
@@ -3609,6 +3830,7 @@
     console.log(`🔍 [U1 DEBUG] Lookup: "${targetDisplay}" (Depth: ${depth})`);
 
     try {
+      const whitelistRaw = JSON.parse(localStorage.getItem('masterDataSupport') || '[]');
       const filteredMaster = getValidMasterData();
 
       if (filteredMaster.length === 0) return { u: null, mc: null, kelas: "" };
@@ -3838,9 +4060,24 @@
     const preNom = document.getElementById("pre-adj-nominal")?.innerText || "-";
     const preRi = document.querySelector(".pre-adj-abs-correction")?.value || "-";
     const postRi = document.querySelector(".post-adj-abs-correction")?.value || "-";
-    const preTol = "0,10";
 
-    const kesimpulanPre = Math.abs(parseNumber(postRi)) <= parseNumber(preTol) ? "MS" : "TMS";
+    // Dynamic Tolerance calculation for Pre-Adjustment
+    const eVal = getVerificationScaleInterval();
+    const accClass = getAccuracyClass();
+    const nomVal = parseNumber(preNom);
+    const m = nomVal / eVal;
+    const mpeFactor = getMPEFactor(m, accClass);
+    const preTolVal = mpeFactor * eVal;
+
+    // Format with appropriate decimals
+    let tolDec = g_decimals + 1;
+    if (eVal.toString().includes('.')) {
+      const eDec = eVal.toString().split('.')[1].length;
+      if (eDec > tolDec) tolDec = eDec;
+    }
+    const preTol = formatNumber(preTolVal, tolDec);
+
+    const kesimpulanPre = Math.abs(parseNumber(postRi)) <= preTolVal ? "MS" : "TMS";
 
     doc.autoTable({
       startY: finalY + 2,
@@ -3944,9 +4181,18 @@
     const linData = [];
     const lt = document.getElementById("linearity-table");
     if (lt) {
+      // Pre-calculate values outside loop
+      const eVal_lin = getVerificationScaleInterval();
+      const accClass_lin = getAccuracyClass();
+      const settings_lin = JSON.parse(localStorage.getItem('calibrationSettings') || '{}');
+      const savedLin = settings_lin.linearityTolerances || [];
+
       const lRows = Array.from(lt.querySelectorAll("tbody tr")).filter(tr => tr.cells.length > 0 && tr.cells[0].hasAttribute("rowspan") && tr.cells[0].innerText.trim() !== "No");
       lRows.forEach((r, idx) => {
-        const nom = r.cells[1].innerText;
+        const nomCell = r.cells[1];
+        const nomSpan = nomCell?.querySelector('span');
+        const nom = nomSpan ? nomSpan.innerText : (nomCell?.innerText || "-");
+
         const corrInput = r.cells[9].querySelector("input");
         const corr = corrInput?.dataset.fullValue || corrInput?.value || "0";
 
@@ -3961,12 +4207,7 @@
           }
         }
 
-        // Tolerance logic (simplified lookup for PDF)
-        const eVal_str = document.getElementById("specs-cell")?.innerText.split("/").pop().replace("g", "").trim().replace(",", ".") || "1";
-        const eVal = parseFloat(eVal_str);
-
-        const savedSettings = JSON.parse(localStorage.getItem('calibrationSettings') || '{}');
-        const savedLin = savedSettings.linearityTolerances || [];
+        // Tolerance logic using standard MPE helpers
         const matchedTol = savedLin.find(t => parseNumber(t.nominal) === parseNumber(nom));
 
         let tolVal;
@@ -3974,12 +4215,9 @@
           tolVal = parseNumber(matchedTol.tolerance);
         } else {
           const nominalNum = parseNumber(nom);
-          const loadM = nominalNum / eVal;
-          let mpeFactor = 0;
-          if (loadM >= 0 && loadM <= 5000) mpeFactor = 0.5;
-          else if (loadM > 5000 && loadM <= 20000) mpeFactor = 1.0;
-          else if (loadM > 20000) mpeFactor = 1.5;
-          tolVal = mpeFactor * eVal;
+          const loadM = nominalNum / eVal_lin;
+          const mpeFactor = getMPEFactor(loadM, accClass_lin);
+          tolVal = mpeFactor * eVal_lin;
         }
 
         const linTolDisplay = formatNumber(tolVal, g_decimals + 1);
@@ -4028,14 +4266,15 @@
     let eccBody = [];
     const posNames = ["Tengah (1)", "Depan (2)", "Kiri (3)", "Belakang (4)", "Kanan (5)"];
 
+    const settings_ecc = JSON.parse(localStorage.getItem('calibrationSettings') || '{}');
+    const eccTolStr = settings_ecc.eccTolerance ? settings_ecc.eccTolerance.replace('%', '') : "0,05";
+
     if (et) {
       const eRows = et.querySelectorAll("tbody tr");
       if (eRows.length > 0) {
         const nomEcc = eRows[0].cells[4].querySelector("input")?.value || "-";
         const sdEcc = eRows[0].cells[2].querySelector("input")?.value || "-";
         const rsdEcc = eRows[0].cells[3].querySelector("input")?.value || "-";
-        const settings = JSON.parse(localStorage.getItem('calibrationSettings') || '{}');
-        const eccTolStr = settings.eccTolerance ? settings.eccTolerance.replace('%', '') : "0,05";
         const kesimpulanEcc = parseNumber(rsdEcc) <= parseNumber(eccTolStr) ? "MS" : "TMS";
 
         // Row 1: Includes all rowspanned columns
@@ -4082,7 +4321,7 @@
       body: [
         [
           { content: "Kriteria Penerimaan : %RSD <= Toleransi ", styles: { halign: 'left' } },
-          { content: "Toleransi : %RSD <= 0,05%", styles: { halign: 'right', fontStyle: 'bolditalic' } }
+          { content: `Toleransi : %RSD <= ${eccTolStr}%`, styles: { halign: 'right', fontStyle: 'bolditalic' } }
         ]
       ],
       theme: 'grid',
@@ -5055,8 +5294,14 @@
       const nomCell = tr.cells[1];
       const mcCell = tr.cells[2];
 
-      nomCell.dataset.baseWeight = vals.nomG;
-      nomCell.classList.add('no-decimal');
+      const nomSpan = nomCell.querySelector('span.no-decimal');
+      if (nomSpan) {
+        nomSpan.dataset.baseWeight = vals.nomG;
+      } else {
+        // Fallback if span not found (shouldn't happen with new HTML)
+        nomCell.dataset.baseWeight = vals.nomG;
+        nomCell.classList.add('no-decimal');
+      }
 
       let mcDec = 9;
       if (g_currentUnit === 'g') mcDec = 6;
@@ -5341,8 +5586,13 @@
     const mcCell = tr.cells[2];  // Column 3: Massa Konvensional
 
     // Update Nominal cell
-    nomCell.dataset.baseWeight = nominalResultG;
-    nomCell.classList.add('no-decimal');
+    const nomSpan = nomCell.querySelector('span.no-decimal');
+    if (nomSpan) {
+      nomSpan.dataset.baseWeight = nominalResultG;
+    } else {
+      nomCell.dataset.baseWeight = nominalResultG;
+      nomCell.classList.add('no-decimal');
+    }
 
     // Update Mc cell
     let mcDec = 9;

@@ -130,43 +130,39 @@
             </thead>
             <tbody class="text-center italic">
                 <tr>
-                    <td>Special (I)</td>
+                    <td class="font-bold">Special (I)</td>
                     <td>0,001 g &le; e</td>
                     <td>50.000</td>
                     <td>-</td>
                 </tr>
-                <tr class="bg-excel-highlight font-bold not-italic">
-                    <td class="italic">High (II)</td>
-                    <td>
-                        <div class="italic">0,001 &le; e &le; 0,05 g</div>
-                        <div>0,1 g &le; e</div>
-                    </td>
-                    <td>
-                        <div class="italic font-normal">100</div>
-                        <div>5.000</div>
-                    </td>
-                    <td>
-                        <div class="italic font-normal">100.000</div>
-                        <div>100.000</div>
-                    </td>
+                <!-- Class II Row 1 -->
+                <tr>
+                    <td rowspan="2" class="font-bold">High (II)</td>
+                    <td>0,001 &le; e &le; 0,05 g</td>
+                    <td>100</td>
+                    <td>100.000</td>
+                </tr>
+                <!-- Class II Row 2 -->
+                <tr>
+                    <td>0,1 g &le; e</td>
+                    <td>5.000</td>
+                    <td>100.000</td>
+                </tr>
+                <!-- Class III Row 1 -->
+                <tr>
+                    <td rowspan="2" class="font-bold">Medium (III)</td>
+                    <td>0,1 g &le; e &le; 2 g</td>
+                    <td>100</td>
+                    <td>10.000</td>
+                </tr>
+                <!-- Class III Row 2 -->
+                <tr>
+                    <td>5 g &le; e</td>
+                    <td>500</td>
+                    <td>10.000</td>
                 </tr>
                 <tr>
-                    <td>Medium (III)</td>
-                    <td>
-                        <div>0,1 g &le; e &le; 2 g</div>
-                        <div>5 g &le; e</div>
-                    </td>
-                    <td>
-                        <div>100</div>
-                        <div>500</div>
-                    </td>
-                    <td>
-                        <div>10.000</div>
-                        <div>10.000</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Ordinary (IIII)</td>
+                    <td class="font-bold">Ordinary (IIII)</td>
                     <td>5 g &le; e</td>
                     <td>100</td>
                     <td>1.000</td>
@@ -511,22 +507,75 @@
             function enableRowSelection(tableId) {
                 const table = document.getElementById(tableId);
                 if (!table) return;
-                // Select all rows in the tbody
                 const rows = table.querySelectorAll('tbody tr');
                 rows.forEach(row => {
-                    row.style.cursor = 'pointer'; // Indicate clickability
+                    row.style.cursor = 'pointer';
                     row.addEventListener('click', function () {
-                        // Check if this row is currently selected
                         const isAlreadySelected = this.classList.contains('bg-excel-highlight');
-
-                        // Remove highlight and bold from all rows in this table
                         rows.forEach(r => r.classList.remove('bg-excel-highlight', 'font-bold'));
-
-                        // If it wasn't selected before, select it now.
-                        // If it WAS selected, we do nothing, effectively deselecting it.
                         if (!isAlreadySelected) {
                             this.classList.add('bg-excel-highlight', 'font-bold');
                         }
+                    });
+                });
+            }
+
+            // Dedicated selection logic for Table 3 to handle split rows and parent cells
+            function highlightTable3Row(rowIndex) {
+                const table3 = document.getElementById('table-accuracy-class');
+                if (!table3) return;
+                const rows = table3.querySelectorAll('tbody tr');
+
+                // Clear all highlights
+                rows.forEach(r => {
+                    r.classList.remove('bg-excel-highlight', 'font-bold');
+                    // Also clear specific cell highlights if any (for parent cells)
+                    const cells = r.querySelectorAll('td');
+                    cells.forEach(c => c.classList.remove('bg-excel-highlight', 'font-bold'));
+                });
+
+                if (rowIndex >= 0 && rows[rowIndex]) {
+                    // Highlight the target row
+                    rows[rowIndex].classList.add('bg-excel-highlight', 'font-bold');
+
+                    // Parent Cell Logic
+                    // Row 2 (Index 1) is High II Top -> Parent cell is in this row. Auto-highlighted.
+                    // Row 3 (Index 2) is High II Bottom -> Parent cell is in Row 2 (Index 1).
+                    if (rowIndex === 2) {
+                        const parentRow = rows[1];
+                        if (parentRow) {
+                            const parentCell = parentRow.cells[0]; // "High (II)"
+                            if (parentCell) parentCell.classList.add('bg-excel-highlight', 'font-bold');
+                        }
+                    }
+
+                    // Row 4 (Index 3) is Medium III Top -> Parent cell is in this row. Auto-highlighted.
+                    // Row 5 (Index 4) is Medium III Bottom -> Parent cell is in Row 4 (Index 3).
+                    if (rowIndex === 4) {
+                        const parentRow = rows[3];
+                        if (parentRow) {
+                            const parentCell = parentRow.cells[0]; // "Medium (III)"
+                            if (parentCell) parentCell.classList.add('bg-excel-highlight', 'font-bold');
+                        }
+                    }
+                }
+            }
+
+            function enableTable3Selection() {
+                const table = document.getElementById('table-accuracy-class');
+                if (!table) return;
+                const rows = table.querySelectorAll('tbody tr');
+
+                rows.forEach((row, index) => {
+                    row.style.cursor = 'pointer';
+                    row.addEventListener('click', function () {
+                        // Check if currently selected (simplified check: is the row highlighted?)
+                        // Note logic: if clicking active, deselect? Or just re-select?
+                        // User prompt "bisa milih" implies toggle or select. Standard is select.
+                        // I will assume selecting another overrides. Clicking same... maybe keeps it?
+                        // Let's implement simple select.
+
+                        highlightTable3Row(index);
                     });
                 });
             }
@@ -542,23 +591,19 @@
                 rows.forEach(row => {
                     const cells = row.querySelectorAll('td');
                     cells.forEach((cell, index) => {
-                        // Skip the first column (MPE column) if desired, but user said "based on Class", so index 1,2,3,4 are the targets.
-                        // Let's assume index 0 (MPE) is not selectable, or selects nothing.
+                        // Skip the first column (MPE column)
                         if (index === 0) return;
 
                         cell.style.cursor = 'pointer';
                         cell.addEventListener('click', function () {
-                            // Check if this column is currently selected (check the cell itself or the column state)
-                            // We check the current cell's highlight status to determine toggle action
                             const isAlreadySelected = this.classList.contains('bg-excel-highlight');
 
-                            // Clear all highlights in the table body first
+                            // Clear all highlights
                             rows.forEach(r => {
                                 const rCells = r.querySelectorAll('td');
                                 rCells.forEach(c => c.classList.remove('bg-excel-highlight', 'font-bold'));
                             });
 
-                            // If not already selected, highlight the column at this index
                             if (!isAlreadySelected) {
                                 rows.forEach(r => {
                                     const rCells = r.querySelectorAll('td');
@@ -575,7 +620,7 @@
             document.addEventListener('DOMContentLoaded', function () {
                 enableRowSelection('table-type-balance');
                 enableRowSelection('table-verification-scale');
-                enableRowSelection('table-accuracy-class');
+                enableTable3Selection(); // Changed from generic to specific
                 enableColumnSelection('table-mpe');
 
                 // Update Dynamic Readability
@@ -737,34 +782,61 @@
 
                         const n = valMax / valE;
 
+
                         // Class Determination Logic
+                        // Row indices:
+                        // 0: Special (I)
+                        // 1: High (II) - Range 1 (0.001 <= e <= 0.05)
+                        // 2: High (II) - Range 2 (0.1 <= e)
+                        // 3: Medium (III) - Range 1 (0.1 <= e <= 2)
+                        // 4: Medium (III) - Range 2 (5 <= e)
+                        // 5: Ordinary (IIII)
+
                         let bestClass = "";
                         let table3RowIndex = -1;
 
                         // Check Class I
-                        if (valE >= 0.001 && n >= 50000) { bestClass = "I"; table3RowIndex = 0; }
+                        // 0.001 g <= e; Min n 50,000; Max n -
+                        if (valE >= 0.001 && n >= 50000) {
+                            bestClass = "I";
+                            table3RowIndex = 0;
+                        }
 
                         // Check Class II
                         if (bestClass === "") {
-                            let matchesII = false;
-                            if (valE >= 0.001 && valE <= 0.05 && n >= 100 && n <= 100000) matchesII = true;
-                            if (valE >= 0.1 && n >= 5000 && n <= 100000) matchesII = true;
-                            if (matchesII) { bestClass = "II"; table3RowIndex = 1; }
+                            // High (II) Range 1: 0.001 <= e <= 0.05; Min 100; Max 100,000
+                            if (valE >= 0.001 && valE <= 0.05 && n >= 100 && n <= 100000) {
+                                bestClass = "II";
+                                table3RowIndex = 1;
+                            }
+                            // High (II) Range 2: 0.1 <= e; Min 5,000; Max 100,000
+                            else if (valE >= 0.1 && n >= 5000 && n <= 100000) {
+                                bestClass = "II";
+                                table3RowIndex = 2;
+                            }
                         }
 
                         // Check Class III
                         if (bestClass === "") {
-                            let matchesIII = false;
-                            if (valE >= 0.1 && valE <= 2 && n >= 100 && n <= 10000) matchesIII = true;
-                            if (valE >= 5 && n >= 500 && n <= 10000) matchesIII = true;
-                            if (matchesIII) { bestClass = "III"; table3RowIndex = 2; }
+                            // Medium (III) Range 1: 0.1 <= e <= 2; Min 100; Max 10,000
+                            if (valE >= 0.1 && valE <= 2 && n >= 100 && n <= 10000) {
+                                bestClass = "III";
+                                table3RowIndex = 3;
+                            }
+                            // Medium (III) Range 2: 5 <= e; Min 500; Max 10,000
+                            else if (valE >= 5 && n >= 500 && n <= 10000) {
+                                bestClass = "III";
+                                table3RowIndex = 4;
+                            }
                         }
 
-                        // Check Class IV
+                        // Check Class IIII
                         if (bestClass === "") {
-                            let matchesIV = false;
-                            if (valE >= 5 && n >= 100 && n <= 1000) matchesIV = true;
-                            if (matchesIV) { bestClass = "IV"; table3RowIndex = 3; }
+                            // Ordinary (IIII) 5 <= e; Min 100; Max 1,000
+                            if (valE >= 5 && n >= 100 && n <= 1000) {
+                                bestClass = "IIII";
+                                table3RowIndex = 5;
+                            }
                         }
 
                         // Update Table 3 Highlight
@@ -772,6 +844,8 @@
                         if (table3 && table3RowIndex !== -1) {
                             const t3Rows = table3.querySelectorAll('tbody tr');
                             t3Rows.forEach(r => r.classList.remove('bg-excel-highlight', 'font-bold'));
+
+                            // Highlight the specific row
                             if (t3Rows[table3RowIndex]) {
                                 t3Rows[table3RowIndex].classList.add('bg-excel-highlight', 'font-bold');
                             }
@@ -779,7 +853,7 @@
 
                         // Update Text Displays
                         const eRef = document.getElementById('e-value-ref');
-                        if (eRef) eRef.innerText = valE.toLocaleString('id-ID') + " g"; // Use valE for formatting
+                        if (eRef) eRef.innerText = valE.toLocaleString('id-ID') + " g";
 
                         const accRef = document.getElementById('accuracy-class-ref');
                         if (accRef) accRef.innerText = bestClass;
