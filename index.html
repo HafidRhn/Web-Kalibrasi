@@ -4497,45 +4497,80 @@
     });
     finalY = doc.lastAutoTable.finalY + 15;
 
-    // --- SIGNATURE SECTION (Fixed at bottom) ---
+    // --- SIGNATURE SECTION (Professional Grid) ---
     const pageHeight = doc.internal.pageSize.getHeight();
-    const sigBaseY = pageHeight - 65; // Moved up slightly
+    const sigHeight = 50; // Total height for signature block
+    const sigBaseY = pageHeight - sigHeight - 15; // Positioned near bottom
 
-    // If content reached signature area, add page
+    // Check if we need a new page for signature
     if (finalY > sigBaseY - 10) {
       doc.addPage();
+      finalY = 55;
     }
 
-    const sigRoleY = sigBaseY + 25; // More room for signature
-    doc.setFontSize(9); // Slightly smaller to give more space
-    doc.setFont("helvetica", "normal");
-
-    // Headers
-    doc.text("Dikerjakan oleh,", 30, sigBaseY, { align: "center" });
-    doc.text("Diperiksa Oleh,", 92.5, sigBaseY, { align: "center" });
-    doc.text("Disetujui oleh,", 165, sigBaseY, { align: "center" });
-
-    // Roles (lines)
-    doc.text("(Teknisi Kalibrasi)", 30, sigRoleY, { align: "center" });
-    doc.line(15, sigRoleY + 1, 45, sigRoleY + 1);
-
-    doc.text("(KKV Supervisor)", 75, sigRoleY, { align: "center" });
-    doc.line(60, sigRoleY + 1, 90, sigRoleY + 1);
-    doc.text("(QS Asst. Manager)", 110, sigRoleY, { align: "center" });
-    doc.line(95, sigRoleY + 1, 125, sigRoleY + 1);
-
-    doc.text("(Maint & Eng Manager)", 145, sigRoleY, { align: "center" });
-    doc.line(130, sigRoleY + 1, 160, sigRoleY + 1);
-    doc.text("(QA Manager)", 185, sigRoleY, { align: "center" });
-    doc.line(170, sigRoleY + 1, 200, sigRoleY + 1);
-
-    // Dates (Increased space and left-aligned for handwriting)
-    const dateY = sigRoleY + 12;
-    doc.text("Tanggal : ..........................", 15, dateY);
-    doc.text("Tanggal : ..........................", 60, dateY);
-    doc.text("Tanggal : ..........................", 95, dateY);
-    doc.text("Tanggal : ..........................", 130, dateY);
-    doc.text("Tanggal : ..........................", 170, dateY);
+    doc.autoTable({
+      startY: sigBaseY,
+      head: [
+        [
+          { content: 'Dikerjakan oleh,', styles: { halign: 'center', fontStyle: 'normal' } },
+          { content: 'Diperiksa Oleh,', colSpan: 2, styles: { halign: 'center', fontStyle: 'normal' } },
+          { content: 'Disetujui oleh,', colSpan: 2, styles: { halign: 'center', fontStyle: 'normal' } }
+        ]
+      ],
+      body: [
+        [
+          { content: '\n\n\n', styles: { minCellHeight: 20 } }, // Space for Signature
+          { content: '\n\n\n', styles: { minCellHeight: 20 } },
+          { content: '\n\n\n', styles: { minCellHeight: 20 } },
+          { content: '\n\n\n', styles: { minCellHeight: 20 } },
+          { content: '\n\n\n', styles: { minCellHeight: 20 } }
+        ],
+        [
+          { content: '(Teknisi Kalibrasi)', styles: { fontStyle: 'bold', borderBottomFixed: true } },
+          { content: '(KKV Supervisor)', styles: { fontStyle: 'bold' } },
+          { content: '(QS Asst. Manager)', styles: { fontStyle: 'bold' } },
+          { content: '(Maint & Eng Manager)', styles: { fontStyle: 'bold' } },
+          { content: '(QA Manager)', styles: { fontStyle: 'bold' } }
+        ],
+        [
+          'Tanggal : ..........................',
+          'Tanggal : ..........................',
+          'Tanggal : ..........................',
+          'Tanggal : ..........................',
+          'Tanggal : ..........................'
+        ]
+      ],
+      theme: 'plain',
+      styles: {
+        fontSize: 8.5,
+        halign: 'center',
+        cellPadding: 0.5,
+        textColor: [0, 0, 0],
+        lineColor: [255, 255, 255] // Transparent borders for most cells
+      },
+      headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontSize: 9
+      },
+      columnStyles: {
+        0: { cellWidth: 36 },
+        1: { cellWidth: 36 },
+        2: { cellWidth: 36 },
+        3: { cellWidth: 36 },
+        4: { cellWidth: 36 }
+      },
+      didDrawCell: function (data) {
+        // Draw underline for roles manually if needed, or use borders
+        if (data.row.index === 1) {
+          const x = data.cell.x + 2;
+          const y = data.cell.y + data.cell.height - 1;
+          const w = data.cell.width - 4;
+          doc.line(x, y, x + w, y);
+        }
+      },
+      margin: pageMargins
+    });
 
     // --- DRAW HEADERS ON ALL PAGES ---
     const totalPages = doc.internal.getNumberOfPages();
